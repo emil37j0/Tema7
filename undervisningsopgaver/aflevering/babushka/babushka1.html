@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Babushka</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        section {
+            width: 80vw;
+            margin: 1vw auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-gap: 1rem;
+        }
+
+        article img {
+            width: 100%;
+        }
+
+        nav {
+            text-align: center;
+
+        }
+
+        p {
+            font-family: monospace;
+            font: 1rem;
+            line-height: 2;
+            color: dimgray;
+            text-align: center;
+
+        }
+
+        h1 {
+            font-family: monospace;
+            font-size: 4rem;
+            color: black;
+            text-transform: uppercase;
+            text-align: center;
+            margin-top: 5rem;
+        }
+
+        h2 {
+            font-family: monospace;
+            font-weight: lighter;
+            font-size: 2rem;
+            text-transform: uppercase;
+            color: black;
+            text-align: center;
+        }
+
+        button {
+            border: 0;
+            color: dimgray;
+            font-size: 1rem;
+            border-right: 1px solid dimgray;
+            padding: 0 2vw 0;
+            cursor: pointer;
+
+        }
+
+        button:last-child {
+            border-right: 0;
+        }
+
+        button:hover {
+            background-color: black;
+            color: white;
+        }
+
+        .valgt {
+            color: black;
+        }
+
+
+        .ret {
+            border: 1px solid dimgrey;
+            padding: 1em;
+        }
+
+        #detalje {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(105, 105, 105, 0.47);
+            overflow: scroll;
+        }
+
+        #detalje .luk {
+            position: fixed;
+            top: 0;
+            right: 0;
+            font-size: 3rem;
+            cursor: pointer;
+        }
+
+        #detalje .ret {
+            width: 40vw;
+            min-height: 50vh;
+            margin: 4rem auto;
+            padding: 4rem;
+            background: white;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Babushka Bistro</h1>
+
+    <nav>
+        <button data-ret="alt" class="valgt">Menu</button>
+        <button data-ret="forretter">Forretter</button>
+        <button data-ret="hovedretter">Hovedretter</button>
+        <button data-ret="desserter">Desserter</button>
+        <button data-ret="drikkevarer">Drikkevarer</button>
+        <button data-ret="sideorders">Side-orders</button>
+
+    </nav>
+    <section id="menu"></section>
+
+    <section id="detalje">
+        <article class="ret">
+            <button class="luk">×
+            </button>
+            <h2></h2>
+            <img src="" alt="">
+            <p class="lang"></p>
+        </article>
+    </section>
+
+
+
+
+    <template>
+        <article class="ret">
+            <h2 class="navn"> </h2>
+            <img class="billede" alt="">
+            <p class="kort"></p>
+            <p class="pris">Pris: </p>
+            <p class="oprindelse"></p>
+        </article>
+    </template>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", start);
+        let menu = [];
+        let filter = "alt";
+
+
+        function start() {
+
+            const filterKnapper = document.querySelectorAll("nav button");
+            filterKnapper.forEach(knap => knap.addEventListener("click", filtrer))
+            hentJson();
+
+            skjulDetalje();
+
+
+        }
+
+
+
+        function filtrer() {
+            console.log(this);
+
+            filter = this.dataset.ret;
+            console.log(filter);
+
+            document.querySelector(".valgt").classList.remove("valgt");
+            this.classList.add("valgt");
+
+            vis();
+        }
+
+
+        async function hentJson() {
+            const jsonUrl =
+                "https://spreadsheets.google.com/feeds/list/17Dd7DvkPaFamNUdUKlrFgnH6POvBJXac7qyiS6zNRw0/od6/public/values?alt=json&fbclid=IwAR21EGbf3OgAgUlKlZ8RRy8Lg5tvr5pcrWEyu5gxcxE0MfKSUmKWvIdrrzg";
+            const jsonData = await fetch(jsonUrl);
+            console.log(jsonData);
+
+            menu = await jsonData.json();
+            console.log(menu);
+
+            vis();
+        }
+
+
+
+        function vis() {
+
+            const dest = document.querySelector("#menu");
+            const temp = document.querySelector("template").content;
+
+            dest.textContent = "";
+
+            menu.feed.entry.forEach(ret => {
+                if (ret.gsx$kategori.$t == filter || filter == "alt") {
+
+                    const klon = temp.cloneNode(true);
+
+
+                    klon.querySelector("h2").textContent = ret.gsx$navn.$t;
+                    klon.querySelector("img").src = "img/small/" + ret.gsx$billede.$t + "-sm.jpg";
+                    klon.querySelector("img").alt = "billedeaf" + ret.gsx$billede.$t;
+                    klon.querySelector(".pris").textContent += ret.gsx$pris.$t + "kr.";
+                    klon.querySelector(".kort").textContent += ret.gsx$kort.$t;
+
+                    klon.querySelector(".ret").addEventListener("click", () => {
+                        visDetalje(ret);
+
+                    });
+
+                    dest.appendChild(klon);
+                }
+            });
+        }
+
+
+
+
+        function visDetalje(ret) {
+            console.log(ret);
+            document.querySelector("#detalje").style.display = "block";
+
+            document.querySelector("#detalje .luk").addEventListener("click", skjulDetalje);
+
+            document.querySelector("#detalje h2").textContent = ret.gsx$navn.$t;
+            document.querySelector("#detalje img").src = "img/large/" + ret.gsx$billede.$t + ".jpg";
+            document.querySelector("#detalje img").alt = `billedeaf${ret.gsx$billede.$t}`;
+            document.querySelector("#detalje .lang").textContent += ret.gsx$lang.$t;
+
+        }
+
+        function skjulDetalje() {
+            document.querySelector("#detalje").style.display = "none";
+        }
+    </script>
+</body></html>
